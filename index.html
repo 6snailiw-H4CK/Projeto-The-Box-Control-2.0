@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>THE BOX — Gestão Financeira</title>
+
+<!-- link externo para o CSS extraído -->
+<link rel="stylesheet" href="styles.css">
+
+</head>
+<body oncontextmenu="return false" ondragstart="return false">
+<div id="custom-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; justify-content:center; align-items:center;">
+  <div class="card" style="width:300px; text-align:center; border:1px solid var(--accent);">
+    <div id="modal-msg" style="margin-bottom:20px; font-weight:600;"></div>
+    <div style="display:flex; justify-content:center; gap:10px;">
+      <button id="modal-confirm-btn">Confirmar</button>
+      <button class="ghost" onclick="document.getElementById('custom-modal').style.display='none'">Cancelar</button>
+    </div>
+  </div>
+</div>
+<div id="toast">Salvando...</div>
+
+<input type="file" id="restoreInput" style="display:none" accept=".json" onchange="processRestore(this)">
+
+<div id="auth-container" class="noselect">
+  <div id="login-view" class="card auth-box">
+    <!-- Cubo 3D Vermelho Neon no card de login -->
+    <div class="login-cube-container">
+      <div class="login-cube">
+        <div class="cube-face"></div>
+        <div class="cube-face"></div>
+        <div class="cube-face"></div>
+        <div class="cube-face"></div>
+        <div class="cube-face"></div>
+        <div class="cube-face"></div>
+      </div>
+    </div>
+
+    <div style="font-size:24px;font-weight:800;margin-bottom:8px">THE BOX</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:24px">Gestão Financeira</div>
+    <div style="text-align:left">
+      <label>Email / Usuário</label>
+      <input type="text" id="loginUser" placeholder="exemplo@gmail.com">
+      <label>Senha</label>
+      <input type="password" id="loginPass" placeholder="****">
+      <button onclick="doLogin()" style="width:100%;margin-top:10px">Entrar</button>
+      <div id="loginError" style="color:var(--accent);font-size:12px;margin-top:10px;display:none">Dados incorretos.</div>
+      <div style="text-align:center;margin-top:15px">
+        <button class="link" onclick="toggleAuth('register')">Criar nova conta</button>
+        <br>
+        <button onclick="resetSystemUsers()" class="ghost" style="margin-top:20px; font-size:10px; color:var(--muted); border:none;">
+          ⚠ Resetar Todos os Usuários
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="register-view" class="card auth-box" style="display:none">
+    <div style="font-size:24px;font-weight:800;margin-bottom:8px">Criar Conta</div>
+    <div style="text-align:left">
+      <label>Nome</label><input type="text" id="regName">
+      <label>Email</label><input type="email" id="regEmail">
+      <label>Telefone</label><input type="tel" id="regPhone">
+      <label>Senha</label><input type="password" id="regPass">
+      <button id="btnReg" onclick="doRegister()" style="width:100%;margin-top:10px">Cadastrar</button>
+      <div id="regStatus" style="font-size:12px;margin-top:10px;text-align:center"></div>
+      <div style="text-align:center;margin-top:15px">
+        <button class="link" onclick="toggleAuth('login')">Voltar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app-content" class="container noselect" style="display:none">
+  <header>
+    <div>
+      <h1>THE BOX</h1>
+      <div id="currentUserDisplay" class="small"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span id="commercialArea">
+        <span id="demoBadge" class="badge-demo">DEMO</span>
+        <button id="buyBtn" onclick="openLink()">Comprar</button>
+        <span id="licenseRow">
+          <input id="licenseKey" placeholder="Chave" />
+          <button onclick="activateLicense()">Ativar</button>
+        </span>
+      </span>
+      <span id="proMenu" style="display:none; gap:8px; align-items:center">
+         <button id="revokeBtn" class="ghost" onclick="revokeLicense()">Resetar Licença</button>
+      </span>
+
+      <button class="ghost" onclick="openRecurring()">📅 Recorrentes</button>
+      
+      <!-- Botão de Backup só aparece na PRO via checkLicense -->
+      <button id="backupBtn" class="ghost" onclick="toggleBackupMenu()">💾 Backup / Restore</button>
+      
+      <button id="themeToggle" class="ghost" onclick="toggleTheme()">Tema</button>
+      <button class="ghost" onclick="doLogout()">Sair</button>
+    </div>
+  </header>
+
+  <div id="backupMenu" class="card" style="display:none; margin-bottom:15px; padding:10px;">
+     <div style="font-weight:700; margin-bottom:8px">Gerenciar Backups</div>
+     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px">
+        <button id="exportJson" style="background:#0f766e; height:100%">
+          <div style="font-size:14px">⬇️ Backup do Sistema</div>
+          <div style="font-size:10px; opacity:0.8">(Salva arquivo para Restaurar)</div>
+        </button>
+        
+        <button onclick="document.getElementById('restoreInput').click()" style="background:#eab308; color:#111; height:100%">
+           <div style="font-size:14px">⬆️ Restaurar Backup</div>
+           <div style="font-size:10px; opacity:0.8">(Use o arquivo do Backup do Sistema)</div>
+        </button>
+     </div>
+     
+     <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:10px 0;">
+     
+     <div style="display:flex; gap:8px; align-items:center">
+        <button id="exportCsv" class="ghost" style="font-size:12px">📄 Exportar Planilha (Excel)</button>
+        <button id="resetAll" class="ghost" style="border-color:#c8102e; color:#c8102e; font-size:12px; margin-left:auto">Apagar Tudo</button>
+     </div>
+  </div>
+
+  <main class="grid">
+    <section>
+      <div class="card">
+        <div class="summary">
+          <div class="s"><div class="small">Saldo</div><div id="saldo" style="font-size:20px;font-weight:700">R$ 0,00</div></div>
+          <div class="s"><div class="small">Receitas</div><div id="receitas" style="font-size:18px;color:var(--ok)">R$ 0,00</div></div>
+          <div class="s"><div class="small">Despesas</div><div id="despesas" style="font-size:18px;color:#ffb86b">R$ 0,00</div></div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <select id="filtroCategoria"><option value="">Todas categorias</option></select>
+          <input type="date" id="filtroData" style="max-width:180px">
+          <button id="aplicarFiltro" class="ghost">Filtrar</button>
+          <button id="limparFiltro" class="ghost">Limpar</button>
+        </div>
+
+        <div class="card" style="margin-bottom:12px"><canvas id="chart" width="600" height="200"></canvas></div>
+
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:10px">Últimas Transações</div>
+          <div id="tx-list" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card">
+        <div style="font-weight:700;margin-bottom:8px">Nova Transação</div>
+        <label>Tipo</label><select id="tipo"><option value="expense">Despesa</option><option value="income">Receita</option></select>
+        <label>Categoria</label><select id="categoria"></select>
+        <button class="ghost" onclick="openCategories()" style="width:100%;margin-bottom:8px;font-size:11px">Gerenciar Categorias</button>
+        <label>Descrição</label><input type="text" id="descricao" placeholder="Ex: Peças">
+        <div class="row">
+          <div class="col"><label>Valor</label><input type="number" id="valor" placeholder="0.00"></div>
+          <div class="col"><label>Data</label><input type="date" id="data"></div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button id="addTx">Salvar</button>
+          <button id="updateTx" style="display:none">Salvar Edição</button>
+          <button id="cancelEdit" class="ghost" style="display:none" onclick="cancelEdit()">Cancelar</button>
+        </div>
+        <input type="hidden" id="editingId">
+        <div style="font-size:10px; color:var(--muted); margin-top:8px; text-align:center">Dados salvos localmente.</div>
+      </div>
+    </aside>
+  </main>
+  <footer>The Box</footer>
+  <footer>2026</footer>
+</div>
+
+<div id="watermark-demo" style="display:none">Versão DEMO</div>
+
+<div id="cat-page" style="display:none;max-width:600px;margin:20px auto">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+      <strong>Categorias</strong><button class="ghost" onclick="closePages()">Voltar</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="newCatName" placeholder="Nova Categoria"><button onclick="addCat()">Adicionar</button>
+    </div>
+    <div id="cat-list"></div>
+  </div>
+</div>
+
+<div id="rec-page" style="display:none;max-width:900px;margin:20px auto">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;margin-bottom:15px">
+      <div>
+        <div style="font-weight:700;font-size:18px">Contas Recorrentes</div>
+        <div class="small">Gerencie contas que se repetem.</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="month-nav">
+          <button class="ghost" onclick="prevRecMonth()" title="Mês anterior">◀</button>
+          <div id="recMonthLabel" style="font-weight:700"></div>
+          <button class="ghost" onclick="nextRecMonth()" title="Próximo mês">▶</button>
+        </div>
+        <button class="ghost" onclick="closePages()">Voltar</button>
+      </div>
+    </div>
+    
+    <div class="summary" style="margin-bottom:15px">
+      <div class="s"><div class="small">Total Recorrente</div><div id="recTotal" style="font-size:18px;font-weight:700">R$ 0,00</div></div>
+      <div class="s"><div class="small">Total Pago</div><div id="recPaid" style="font-size:18px;color:var(--ok)">R$ 0,00</div></div>
+      <div class="s"><div class="small">Total Pendente</div><div id="recPending" style="font-size:18px;color:var(--warn)">R$ 0,00</div></div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div style="font-weight:700;margin-bottom:8px">Lista de Contas Mês</div>
+        <div id="rec-list" class="list" style="max-height:500px"></div>
+      </div>
+      
+      <div class="card" style="height:fit-content">
+        <div style="font-weight:700;margin-bottom:8px" id="recFormTitle">Nova Recorrente</div>
+        <label>Descrição</label><input type="text" id="recDesc" placeholder="Ex: Energia">
+        <label>Valor (R$)</label><input type="number" id="recValor">
+        <div class="row">
+          <div class="col"><label>Dia Venc.</label><input type="number" id="recDia" max="31"></div>
+        </div>
+        <div style="display:flex;gap:5px;margin-top:10px">
+          <button onclick="saveRecurring()" id="btnSaveRec">Salvar Regra</button>
+          <button class="ghost" onclick="resetRecForm()" style="display:none" id="btnCancelRec">Cancelar</button>
+        </div>
+        <input type="hidden" id="recEditId">
+        <div class="small" style="margin-top:8px;color:var(--muted)">Nota: O status (Pago/Pendente) é gerenciado na lista ao lado, individualmente por mês.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="aiMic" class="ai-mic-button" onclick="toggleVoiceAssistant()">
+  🎙️
+</div>
+
+<script src="app.js"></script>
+<script src="ai-assistant.js"></script> 
+</body>
+</html>
+</html>
