@@ -386,16 +386,19 @@ const DEMO_LIMIT = 10;
 function isPro() { return state.licenseKey === 'BOXPRO'; }
 function checkLicense() {
   const backupBtn = document.getElementById('backupBtn');
+  const aiMicBtn = document.getElementById('aiMic');
   if(isPro()) {
     document.getElementById('demoBadge').style.display='none'; document.getElementById('licenseKey').style.display='none';
     document.getElementById('buyBtn').style.display='none'; document.getElementById('commercialArea').style.display='none';
     document.getElementById('proMenu').style.display='inline-flex'; document.getElementById('resetAll').disabled = false;
     if(backupBtn) backupBtn.style.display = 'inline-block';
+    if(aiMicBtn) aiMicBtn.style.display = 'inline-block';
   } else {
     document.getElementById('demoBadge').style.display='inline-block'; document.getElementById('licenseKey').style.display='inline-block';
     document.getElementById('buyBtn').style.display='inline-block'; document.getElementById('commercialArea').style.display='flex';
     document.getElementById('proMenu').style.display='none'; document.getElementById('resetAll').disabled = true;
     if(backupBtn) backupBtn.style.display = 'none';
+    if(aiMicBtn) aiMicBtn.style.display = 'none';
   }
 }
 function canAdd() {
