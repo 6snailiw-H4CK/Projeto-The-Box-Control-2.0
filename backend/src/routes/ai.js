@@ -14,8 +14,18 @@ router.post('/ask', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'Texto não fornecido' });
     }
 
-    if (!process.env.DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY.includes('sk-xxx')) {
-      return res.status(500).json({ error: 'DeepSeek não configurado no backend' });
+    // Verificar se DeepSeek está configurado
+    const hasDeepSeekKey = process.env.DEEPSEEK_API_KEY && 
+                          !process.env.DEEPSEEK_API_KEY.includes('sk-xxx') &&
+                          !process.env.DEEPSEEK_API_KEY.includes('sk-');
+
+    if (!hasDeepSeekKey) {
+      // Modo fallback: retornar erro com mensagem útil
+      return res.status(503).json({ 
+        error: 'DeepSeek IA não configurado',
+        message: 'Configure DEEPSEEK_API_KEY no Railway para ativar a IA',
+        hint: 'Obtenha uma chave em https://platform.deepseek.com/api_keys'
+      });
     }
 
     // Obter categorias do usuário
