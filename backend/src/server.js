@@ -21,6 +21,11 @@ console.log(`   MongoDB: ${process.env.MONGODB_URI ? '✅ Configurado' : '❌ Fa
 
 const app = express();
 
+// ===== TRUST PROXY =====
+// Necessário para Railway/Vercel pegar corretamente o IP real do usuário
+// Importante para rate limiting e logging
+app.set('trust proxy', 1);
+
 // ===== MIDDLEWARES =====
 app.use(express.json({ limit: '10mb' }));
 
@@ -49,7 +54,15 @@ app.use(cors({
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100 // limite de 100 requisições por IP
+  max: 100, // limite de 100 requisições por IP
+  keyGenerator: (req, res) => {
+    // Em produção, pegar IP do X-Forwarded-For (Railway)
+    return req.ip || req.connection.remoteAddress;
+  },
+  skip: (req, res) => {
+    // Não aplicar rate limit a health checks
+    return req.path === '/api/health';
+  }
 });
 app.use('/api/', limiter);
 
