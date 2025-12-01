@@ -3,10 +3,16 @@ const Recurring = require('../models/Recurring');
 const { verifyToken } = require('../middleware/auth');
 const router = express.Router();
 
+// Helper para converter admin user
+function getUserId(userIdFromToken) {
+  return userIdFromToken === 'admin' ? 'admin-user-id' : userIdFromToken;
+}
+
 // ===== GET ALL RECURRING =====
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const recurring = await Recurring.find({ userId: req.userId, active: true });
+    const userId = getUserId(req.userId);
+    const recurring = await Recurring.find({ userId, active: true });
     res.json(recurring);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -16,6 +22,7 @@ router.get('/', verifyToken, async (req, res) => {
 // ===== CREATE RECURRING =====
 router.post('/', verifyToken, async (req, res) => {
   try {
+    const userId = getUserId(req.userId);
     const { desc, valor, dia } = req.body;
 
     if (!desc || !valor || !dia) {
@@ -23,7 +30,7 @@ router.post('/', verifyToken, async (req, res) => {
     }
 
     const recurring = new Recurring({
-      userId: req.userId,
+      userId,
       desc,
       valor,
       dia,
@@ -40,8 +47,9 @@ router.post('/', verifyToken, async (req, res) => {
 // ===== UPDATE RECURRING =====
 router.put('/:id', verifyToken, async (req, res) => {
   try {
+    const userId = getUserId(req.userId);
     const recurring = await Recurring.findOneAndUpdate(
-      { _id: req.params.id, userId: req.userId },
+      { _id: req.params.id, userId },
       { ...req.body, updatedAt: Date.now() },
       { new: true }
     );

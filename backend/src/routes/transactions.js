@@ -7,7 +7,10 @@ const router = express.Router();
 router.get('/', verifyToken, async (req, res) => {
   try {
     const { startDate, endDate, categoria } = req.query;
-    const query = { userId: req.userId };
+    
+    // Se o userId for "admin" (string), usar um ID fixo para admin
+    const userId = req.userId === 'admin' ? 'admin-user-id' : req.userId;
+    const query = { userId };
 
     if (startDate || endDate) {
       query.data = {};
@@ -29,7 +32,12 @@ router.get('/', verifyToken, async (req, res) => {
 // ===== CREATE TRANSACTION =====
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { tipo, categoria, descricao, valor, data } = req.body;
+    // Normalizar campos (suportar tanto em PT quanto EN)
+    const tipo = req.body.tipo || req.body.type;
+    const categoria = req.body.categoria || req.body.category;
+    const descricao = req.body.descricao || req.body.description;
+    const valor = req.body.valor || req.body.amount;
+    const data = req.body.data || req.body.date;
 
     if (!tipo || !categoria || !descricao || !valor || !data) {
       return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
@@ -39,8 +47,11 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'Valor deve ser maior que zero' });
     }
 
+    // Se o userId for "admin" (string), usar um ID fixo para admin
+    const userId = req.userId === 'admin' ? 'admin-user-id' : req.userId;
+
     const transaction = new Transaction({
-      userId: req.userId,
+      userId,
       tipo,
       categoria,
       descricao,
