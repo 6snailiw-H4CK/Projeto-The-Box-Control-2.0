@@ -1,8 +1,13 @@
 /* ==================================================
-   CONFIGURAÇÃO DA API
-   ================================================== */
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://projeto-the-box-control-20-production.up.railway.app/api';
-let authToken = localStorage.getItem('authToken');
+  CONFIGURAÇÃO DA API
+  ================================================== */
+const API_BASE_URL = (typeof process !== 'undefined' && process && process.env && process.env.REACT_APP_API_URL)
+  ? process.env.REACT_APP_API_URL
+  : 'http://projeto-the-box-control-20-production.up.railway.app/api';
+
+// read auth token from localStorage (fallback safe)
+let authToken = null;
+try { authToken = localStorage.getItem('authToken'); } catch (e) { authToken = null; }
 
 /* ==================================================
    MODAL PERSONALIZADO & UTILITÁRIOS
