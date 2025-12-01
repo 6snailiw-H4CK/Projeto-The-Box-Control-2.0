@@ -90,7 +90,12 @@ router.post('/login', async (req, res) => {
 router.get('/me', verifyToken, async (req, res) => {
   try {
     if (req.userId === 'admin') {
-      return res.json({ id: 'admin', email: 'admin', name: 'Master' });
+      return res.json({ 
+        id: 'admin', 
+        email: 'admin', 
+        name: 'Master',
+        licenseKey: 'BOXPRO'
+      });
     }
 
     const user = await User.findById(req.userId);
@@ -120,6 +125,40 @@ router.put('/me', verifyToken, async (req, res) => {
     );
 
     res.json(user.toJSON());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== UPDATE LICENSE =====
+router.put('/me/license', verifyToken, async (req, res) => {
+  try {
+    const { licenseKey } = req.body;
+
+    // Admin usa licença padrão
+    if (req.userId === 'admin') {
+      return res.json({ 
+        message: 'Admin sempre tem licença PRO',
+        licenseKey: 'BOXPRO',
+        user: { id: 'admin', email: 'admin', name: 'Master', licenseKey: 'BOXPRO' }
+      });
+    }
+
+    // Aceitar null (para desativar) ou BOXPRO
+    if (licenseKey && licenseKey !== 'BOXPRO') {
+      return res.status(400).json({ error: 'Chave inválida' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { licenseKey: licenseKey || null, updatedAt: Date.now() },
+      { new: true }
+    );
+
+    res.json({
+      message: licenseKey ? 'Licença ativada com sucesso' : 'Licença desativada',
+      user: user.toJSON()
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

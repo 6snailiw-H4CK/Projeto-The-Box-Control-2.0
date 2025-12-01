@@ -128,9 +128,11 @@ async function doLogin() {
 
 function setUser(user) {
   currentUser = user;
+  state.licenseKey = user.licenseKey || null;
   document.getElementById('auth-container').style.display = 'none';
   document.getElementById('app-content').style.display = 'block';
   document.getElementById('currentUserDisplay').textContent = `Logado: ${user.name || user.email}`;
+  checkLicense();
   initApp();
 }
 
@@ -649,23 +651,36 @@ function canAdd() {
   return true;
 }
 
-function activateLicense() {
+async function activateLicense() {
   const k = document.getElementById('licenseKey').value;
   if (k === 'BOXPRO') {
-    state.licenseKey = k;
-    saveState();
-    showAlert('Ativado!');
-    location.reload();
+    // Enviar para backend
+    const result = await apiCall('/auth/me/license', 'PUT', { licenseKey: k });
+    if (result && result.user) {
+      state.licenseKey = k;
+      currentUser = result.user;
+      checkLicense();
+      showAlert('✅ Licença ativada com sucesso!');
+      document.getElementById('licenseKey').value = '';
+    } else {
+      showAlert('❌ Erro ao ativar licença');
+    }
   } else {
-    showAlert('Chave inválida');
+    showAlert('❌ Chave inválida');
   }
 }
 
-function revokeLicense() {
-  showConfirm("Desativar licença?", () => {
-    state.licenseKey = null;
-    saveState();
-    location.reload();
+async function revokeLicense() {
+  showConfirm("Desativar licença?", async () => {
+    const result = await apiCall('/auth/me/license', 'PUT', { licenseKey: null });
+    if (result) {
+      state.licenseKey = null;
+      currentUser.licenseKey = null;
+      checkLicense();
+      showAlert('✅ Licença desativada');
+    } else {
+      showAlert('❌ Erro ao desativar');
+    }
   });
 }
 
