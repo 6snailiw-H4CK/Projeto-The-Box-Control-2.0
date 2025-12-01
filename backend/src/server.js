@@ -8,8 +8,26 @@ const app = express();
 
 // ===== MIDDLEWARES =====
 app.use(express.json({ limit: '10mb' }));
+
+// Permitir múltiplas origens (dev e produção)
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:5500',
+  'http://localhost:5173',
+  'https://the-box-control-2-0.vercel.app',
+  'https://projeto-the-box-control-20-production.up.railway.app',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('CORS warning - origin not in whitelist:', origin);
+      callback(null, true); // Permitir mesmo assim para debug
+    }
+  },
   credentials: true
 }));
 
