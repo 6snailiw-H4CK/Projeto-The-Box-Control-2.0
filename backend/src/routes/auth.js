@@ -164,4 +164,23 @@ router.put('/me/license', verifyToken, async (req, res) => {
   }
 });
 
+// ===== RESET ALL USERS (Development/Admin) =====
+router.delete('/reset-all-users', async (req, res) => {
+  try {
+    // Validação simples - em produção, adicionar autenticação mais robusta
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== process.env.JWT_SECRET) {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+
+    const result = await User.deleteMany({});
+    res.json({ 
+      message: 'Todos os usuários foram deletados',
+      deletedCount: result.deletedCount 
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

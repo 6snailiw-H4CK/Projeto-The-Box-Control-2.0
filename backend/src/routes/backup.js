@@ -88,4 +88,22 @@ router.get('/download/csv', verifyToken, async (req, res) => {
   }
 });
 
+// ===== DELETE ALL DATA (RESET COMPLETO) =====
+router.delete('/delete-all', verifyToken, async (req, res) => {
+  try {
+    // Deletar todas as transações
+    await Transaction.deleteMany({ userId: req.userId });
+    
+    // Deletar todas as recorrentes
+    await Recurring.deleteMany({ userId: req.userId });
+    
+    // Deletar todas as categorias customizadas
+    await Category.deleteMany({ userId: req.userId });
+
+    res.json({ message: 'Todos os dados foram deletados com sucesso' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

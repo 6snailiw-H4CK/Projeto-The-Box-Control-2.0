@@ -179,7 +179,32 @@ async function doRegister() {
 }
 
 function resetSystemUsers() {
-  showAlert('Esta funcionalidade foi removida por segurança.');
+  showConfirm('⚠️ DELETAR TODOS OS USUÁRIOS E DADOS?\n\nEsta ação é IRREVERSÍVEL!', async () => {
+    showToast('Deletando todos os usuários...');
+    
+    // Fazer requisição especial com header de admin
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-all-users`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': process.env.JWT_SECRET || 'K8c7sN9uR4pQ2tZ1bYfH6mLxE3vA0qW'
+        }
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showAlert(`✅ Sucesso!\n\n${result.deletedCount} usuário(s) deletado(s).\n\nRecarregando...`);
+        setTimeout(() => location.reload(), 2000);
+      } else {
+        showAlert('❌ Erro ao deletar usuários: ' + result.error);
+      }
+    } catch (err) {
+      console.error('Erro:', err);
+      showAlert('❌ Erro ao conectar com servidor');
+    }
+  });
 }
 
 /* ==================================================
@@ -688,9 +713,15 @@ function openLink() { window.open('https://linktr.ee/BoxMotors'); }
 
 document.getElementById('resetAll').addEventListener('click', () => {
   if (!isPro()) return showAlert('Função PRO.');
-  showConfirm('TEM CERTEZA? Apagará tudo.', async () => {
-    // Implementar delete all no backend
-    showAlert('Funcionalidade em desenvolvimento');
+  showConfirm('TEM CERTEZA? Apagará TUDO permanentemente.', async () => {
+    showToast('Deletando dados...');
+    const result = await apiCall('/backup/delete-all', 'DELETE');
+    if (result) {
+      showAlert('✅ Todos os dados foram apagados!');
+      await updateUI();
+    } else {
+      showAlert('❌ Erro ao apagar dados');
+    }
   });
 });
 
