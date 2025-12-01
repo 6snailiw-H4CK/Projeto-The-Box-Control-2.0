@@ -15,16 +15,29 @@ router.post('/ask', verifyToken, async (req, res) => {
     }
 
     // Verificar se DeepSeek está configurado
-    const hasDeepSeekKey = process.env.DEEPSEEK_API_KEY && 
-                          process.env.DEEPSEEK_API_KEY.startsWith('sk-') &&
-                          process.env.DEEPSEEK_API_KEY.length > 10;
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    const hasDeepSeekKey = apiKey && 
+                          apiKey.startsWith('sk-') &&
+                          apiKey.length > 10;
 
     if (!hasDeepSeekKey) {
-      // Modo fallback: retornar erro com mensagem útil
+      // Log para debug
+      console.error('❌ DeepSeek não configurado:');
+      console.error(`   DEEPSEEK_API_KEY: ${apiKey ? 'presente' : 'ausente'}`);
+      if (apiKey) {
+        console.error(`   Começa com 'sk-': ${apiKey.startsWith('sk-')}`);
+        console.error(`   Comprimento: ${apiKey.length} (precisa > 10)`);
+      }
+      
       return res.status(503).json({ 
         error: 'DeepSeek IA não configurado',
         message: 'Configure DEEPSEEK_API_KEY no Railway para ativar a IA',
-        hint: 'Obtenha uma chave em https://platform.deepseek.com/api_keys'
+        hint: 'Obtenha uma chave em https://platform.deepseek.com/api_keys',
+        debug: {
+          keyPresent: !!apiKey,
+          keyLength: apiKey ? apiKey.length : 0,
+          startsWithSk: apiKey ? apiKey.startsWith('sk-') : false
+        }
       });
     }
 
@@ -54,20 +67,38 @@ router.post('/ask', verifyToken, async (req, res) => {
       { "action": "add_rec", "desc": "Descrição", "val": 0.00, "dia": 1 }
     `;
 
-    const response = await axios.post('https://api.deepseek.com/chat/completions', {
-      model: "deepseek-chat",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userText }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.1
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
-        'Content-Type': 'application/json'
+    let response;
+    try {
+      response = await axios.post('https://api.deepseek.com/chat/completions', {
+        model: "deepseek-chat",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userText }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.1
+      }, {
+        headers: {
+          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      });
+    } catch (axiosErr) {
+      console.error('❌ Erro ao chamar DeepSeek API:');
+      console.error(`   Status: ${axiosErr.response?.status || 'sem resposta'}`);
+      console.error(`   Mensagem: ${axiosErr.response?.data?.error?.message || axiosErr.message}`);
+      
+      if (axiosErr.response?.status === 401) {
+        return res.status(401).json({
+          error: 'Chave DeepSeek inválida ou expirada',
+          message: 'Verifique se a chave foi copiada corretamente',
+          hint: 'Gere uma nova chave em https://platform.deepseek.com/api_keys'
+        });
       }
-    });
+      
+      throw axiosErr;
+    }
 
     const aiText = response.data.choices[0].message.content;
     const cmd = JSON.parse(aiText);

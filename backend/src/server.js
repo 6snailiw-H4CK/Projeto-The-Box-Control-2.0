@@ -18,6 +18,12 @@ console.log(`   ADMIN_EMAIL: ${process.env.ADMIN_EMAIL}`);
 console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
 console.log(`   FRONTEND_URL: ${process.env.FRONTEND_URL}`);
 console.log(`   MongoDB: ${process.env.MONGODB_URI ? '✅ Configurado' : '❌ Faltando'}`);
+console.log(`   DeepSeek Key: ${process.env.DEEPSEEK_API_KEY ? '✅ Configurado' : '❌ Faltando'}`);
+if (process.env.DEEPSEEK_API_KEY) {
+  const key = process.env.DEEPSEEK_API_KEY;
+  console.log(`     → Chave inicia com: ${key.substring(0, 10)}...`);
+  console.log(`     → Comprimento: ${key.length} caracteres`);
+}
 
 const app = express();
 
