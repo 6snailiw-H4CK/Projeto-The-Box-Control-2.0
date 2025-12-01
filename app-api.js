@@ -345,7 +345,7 @@ document.getElementById('limparFiltro').addEventListener('click', async () => {
 async function renderChart() {
   const cv = document.getElementById('chart');
   const ctx = cv.getContext('2d');
-  ctx.clearRect(0, cv.width, cv.height);
+  ctx.clearRect(0, 0, cv.width, cv.height);
 
   const result = await apiCall('/transactions/summary/stats');
   if (!result) return;
