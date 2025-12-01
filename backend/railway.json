@@ -1,0 +1,8 @@
+{
+  "build": {
+    "builder": "heroku.buildpacks"
+  },
+  "deploy": {
+    "startCommand": "npm start"
+  }
+}
