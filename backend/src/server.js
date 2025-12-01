@@ -4,6 +4,21 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// ===== SET DEFAULT ENVIRONMENT VARIABLES =====
+// Se não encontrar no .env (Railway não tem .env), usar padrões
+if (!process.env.ADMIN_EMAIL) process.env.ADMIN_EMAIL = 'admin';
+if (!process.env.ADMIN_PASSWORD) process.env.ADMIN_PASSWORD = '1570';
+if (!process.env.JWT_SECRET) process.env.JWT_SECRET = 'K8c7sN9uR4pQ2tZ1bYfH6mLxE3vA0qW';
+if (!process.env.JWT_EXPIRE) process.env.JWT_EXPIRE = '7d';
+if (!process.env.NODE_ENV) process.env.NODE_ENV = 'production';
+if (!process.env.FRONTEND_URL) process.env.FRONTEND_URL = 'https://the-box-control-2-0.vercel.app';
+
+console.log('🔧 Environment Config:');
+console.log(`   ADMIN_EMAIL: ${process.env.ADMIN_EMAIL}`);
+console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`   FRONTEND_URL: ${process.env.FRONTEND_URL}`);
+console.log(`   MongoDB: ${process.env.MONGODB_URI ? '✅ Configurado' : '❌ Faltando'}`);
+
 const app = express();
 
 // ===== MIDDLEWARES =====
