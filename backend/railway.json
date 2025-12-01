@@ -1,8 +1,5 @@
 {
   "build": {
-    "builder": "heroku.buildpacks"
-  },
-  "deploy": {
-    "startCommand": "npm start"
+    "builder": "nixpacks"
   }
 }
