@@ -7,10 +7,7 @@ const router = express.Router();
 router.get('/', verifyToken, async (req, res) => {
   try {
     const { startDate, endDate, categoria } = req.query;
-    
-    // Se o userId for "admin" (string), usar um ID fixo para admin
-    const userId = req.userId === 'admin' ? 'admin-user-id' : req.userId;
-    const query = { userId };
+    const query = { userId: req.userId };
 
     if (startDate || endDate) {
       query.data = {};
@@ -47,11 +44,8 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'Valor deve ser maior que zero' });
     }
 
-    // Se o userId for "admin" (string), usar um ID fixo para admin
-    const userId = req.userId === 'admin' ? 'admin-user-id' : req.userId;
-
     const transaction = new Transaction({
-      userId,
+      userId: req.userId,
       tipo,
       categoria,
       descricao,

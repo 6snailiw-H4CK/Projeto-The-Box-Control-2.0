@@ -5,21 +5,15 @@ const router = express.Router();
 
 const DEFAULT_CATS = ['Combustível', 'Peças', 'Serviços', 'Marketing', 'Outros'];
 
-// Helper para converter admin user
-function getUserId(userIdFromToken) {
-  return userIdFromToken === 'admin' ? 'admin-user-id' : userIdFromToken;
-}
-
 // ===== GET ALL CATEGORIES =====
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const userId = getUserId(req.userId);
-    let categories = await Category.find({ userId });
+    let categories = await Category.find({ userId: req.userId });
     
     if (categories.length === 0) {
       // Criar categorias padrão
       const defaultCategories = DEFAULT_CATS.map(name => ({
-        userId,
+        userId: req.userId,
         name
       }));
       categories = await Category.insertMany(defaultCategories);
@@ -34,19 +28,18 @@ router.get('/', verifyToken, async (req, res) => {
 // ===== CREATE CATEGORY =====
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const userId = getUserId(req.userId);
     const { name } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Nome da categoria é obrigatório' });
     }
 
-    const existing = await Category.findOne({ userId, name });
+    const existing = await Category.findOne({ userId: req.userId, name });
     if (existing) {
       return res.status(409).json({ error: 'Categoria já existe' });
     }
 
-    const category = new Category({ userId, name });
+    const category = new Category({ userId: req.userId, name });
     await category.save();
 
     res.status(201).json({ message: 'Categoria criada', name });
@@ -58,9 +51,8 @@ router.post('/', verifyToken, async (req, res) => {
 // ===== DELETE CATEGORY =====
 router.delete('/:name', verifyToken, async (req, res) => {
   try {
-    const userId = getUserId(req.userId);
     const category = await Category.findOneAndDelete({
-      userId,
+      userId: req.userId,
       name: req.params.name
     });
 
