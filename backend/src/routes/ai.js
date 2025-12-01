@@ -16,8 +16,8 @@ router.post('/ask', verifyToken, async (req, res) => {
 
     // Verificar se DeepSeek está configurado
     const hasDeepSeekKey = process.env.DEEPSEEK_API_KEY && 
-                          !process.env.DEEPSEEK_API_KEY.includes('sk-xxx') &&
-                          !process.env.DEEPSEEK_API_KEY.includes('sk-');
+                          process.env.DEEPSEEK_API_KEY.startsWith('sk-') &&
+                          process.env.DEEPSEEK_API_KEY.length > 10;
 
     if (!hasDeepSeekKey) {
       // Modo fallback: retornar erro com mensagem útil
