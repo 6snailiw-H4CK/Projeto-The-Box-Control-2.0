@@ -555,13 +555,27 @@ async function markRecPaid(id) {
   const currentStatus = (r.history && r.history[key]) ? r.history[key] : 'pendente';
   const newStatus = currentStatus === 'pago' ? 'pendente' : 'pago';
 
+  // Log para debug
+  try { console.log(`🔄 markRecPaid: ID=${id}, key=${key}, currentStatus=${currentStatus}, newStatus=${newStatus}`); } catch (e) {}
+
   const result = await apiCall(`/recurring/${id}/status`, 'PATCH', {
     monthKey: key,
     status: newStatus
   });
 
   if (result) {
+    // Atualizar o estado local ANTES de re-renderizar para evitar race condition
+    // Isto garante que a UI muda imediatamente
+    if (!r.history) r.history = {};
+    r.history[key] = newStatus;
+    
+    // Log do resultado
+    try { console.log(`✅ markRecPaid sucesso. Novo status=${r.history[key]}`); } catch (e) {}
+    
+    // Re-renderizar a lista com estado já atualizado
     renderRecList();
+  } else {
+    console.error('❌ markRecPaid falhou');
   }
 }
 

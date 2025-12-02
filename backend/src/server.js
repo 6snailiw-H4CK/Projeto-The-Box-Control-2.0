@@ -42,6 +42,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'https://the-box-control-2-0.vercel.app',
   'https://projeto-the-box-control-20-production.up.railway.app',
+  'https://6snailiw-h4ck.github.io',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
