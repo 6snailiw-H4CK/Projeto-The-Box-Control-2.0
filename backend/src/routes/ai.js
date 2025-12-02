@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const Transaction = require('../models/Transaction');
 const Recurring = require('../models/Recurring');
+const Category = require('../models/Category');
 const { verifyToken } = require('../middleware/auth');
 const router = express.Router();
 
@@ -41,9 +42,16 @@ router.post('/ask', verifyToken, async (req, res) => {
       });
     }
 
-    // Obter categorias do usuário
-    const transactions = await Transaction.find({ userId: req.userId });
-    const categories = [...new Set(transactions.map(t => t.categoria))];
+    // Obter categorias do usuário (preferir tabela de categorias se existir)
+    let categories = [];
+    try {
+      const cats = await Category.find({ userId: req.userId });
+      if (cats && cats.length) categories = cats.map(c => c.name);
+    } catch (e) {
+      // fallback para categorias encontradas nas transações
+      const transactions = await Transaction.find({ userId: req.userId });
+      categories = [...new Set(transactions.map(t => t.categoria))];
+    }
     const catsList = categories.length > 0 ? categories.join(', ') : 'Geral, Outros';
 
     const today = new Date().toISOString().split('T')[0];
@@ -103,18 +111,31 @@ router.post('/ask', verifyToken, async (req, res) => {
     const aiText = response.data.choices[0].message.content;
     const cmd = JSON.parse(aiText);
 
+    // Normalizar categoria retornada pela IA para uma categoria existente
+    let matchedCat = null;
+    if (cmd.cat) {
+      const candidate = String(cmd.cat).trim();
+      // busca por igualdade ignorando case
+      matchedCat = categories.find(c => c.toLowerCase() === candidate.toLowerCase());
+      // busca por inclusão (ex.: IA retorna 'combustivel' ou 'combustivel carro')
+      if (!matchedCat) matchedCat = categories.find(c => candidate.toLowerCase().includes(c.toLowerCase()));
+      // busca por inclusão inversa (categoria é substring do candidate)
+      if (!matchedCat) matchedCat = categories.find(c => c.toLowerCase().includes(candidate.toLowerCase()));
+    }
+
     // Executar ação da IA
     if (cmd.action === 'add_tx') {
+      const finalCat = matchedCat || (cmd.cat ? String(cmd.cat).trim() : 'Outros');
       const transaction = new Transaction({
         userId: req.userId,
         tipo: cmd.tipo,
-        categoria: cmd.cat || 'Outros',
+        categoria: finalCat,
         descricao: cmd.desc,
         valor: Number(cmd.val),
         data: new Date(cmd.data)
       });
       await transaction.save();
-      return res.json({ success: true, action: 'add_tx', data: transaction });
+      return res.json({ success: true, action: 'add_tx', data: transaction, usedCategory: finalCat });
     }
 
     if (cmd.action === 'add_rec') {

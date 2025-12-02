@@ -259,7 +259,16 @@ async function saveTx(id = null) {
 
   if (!val || val <= 0) return showAlert('Valor inválido');
 
+  // Validação: garantir que a categoria está selecionada
+  if (!cat) {
+    showAlert('Selecione uma categoria antes de salvar.');
+    return;
+  }
+
   const txObj = { tipo, categoria: cat, descricao: desc, valor: val, data: dt };
+
+  // Log para ajudar debug de problema de categoria sendo sempre a primeira
+  try { console.debug('Salvar transação:', txObj); } catch (e) {}
 
   showToast('Salvando...');
 
